@@ -1,0 +1,50 @@
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: techhouse_db
+    environment:
+      POSTGRES_USER: ${DB_USER:-techhouse}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-techhouse_password}
+      POSTGRES_DB: ${DB_NAME:-techhouse}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-techhouse} -d ${DB_NAME:-techhouse}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - techhouse_network
+    restart: unless-stopped
+
+  # FastAPI Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: techhouse_app
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-techhouse}:${DB_PASSWORD:-techhouse_password}@db:5432/${DB_NAME:-techhouse}
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
+      DEBUG: ${DEBUG:-false}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:8080}
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - techhouse_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  techhouse_network:
+    driver: bridge
