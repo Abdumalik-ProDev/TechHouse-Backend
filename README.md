@@ -49,7 +49,7 @@ The API will be available at `http://localhost:8000`
 
 On first run, the database will be created automatically. Access the Swagger documentation at:
 ```
-http://localhost:8000/docs
+http://localhost:8000/redock
 ```
 
 ## Project Structure
